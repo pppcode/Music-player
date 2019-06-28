@@ -217,7 +217,7 @@ var Swiper = function Swiper(node) {
         eventHub['swipRight'].forEach(function (fn) {
           return fn.bind(root)();
         });
-      } else if (initX - newX > 50) {
+      } else if (initX - newX > 10) {
         eventHub['swipLeft'].forEach(function (fn) {
           return fn.bind(root)();
         });
@@ -271,6 +271,8 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
+console.log('hello  饥人谷sss');
+
 var Player =
 /*#__PURE__*/
 function () {
@@ -292,8 +294,10 @@ function () {
     this.songList = [];
     this.currentIndex = 0;
     this.audio = new Audio();
+    this.lyricsArr = [];
+    this.lyricIndex = -1;
     this.start();
-    this.bind();
+    this.bind(); //https://jirengu.github.io/data-mock/huawei-music/music-list.json
   }
 
   _createClass(Player, [{
@@ -301,19 +305,18 @@ function () {
     value: function start() {
       var _this2 = this;
 
-      // 获取数据并开启播放器
       fetch('https://jirengu.github.io/data-mock/huawei-music/music-list.json').then(function (res) {
         return res.json();
       }).then(function (data) {
         console.log(data);
         _this2.songList = data;
-        _this2.audio.src = _this2.songList[_this2.currentIndex].url;
+
+        _this2.loadSong();
       });
     }
   }, {
     key: "bind",
     value: function bind() {
-      // 实现播放/暂停等功能
       var self = this;
 
       this.$('.btn-play-pause').onclick = function () {
@@ -332,53 +335,161 @@ function () {
 
       this.$('.btn-pre').onclick = function () {
         console.log('pre');
-        self.playPrevSong();
+        self.currentIndex = (self.songList.length + self.currentIndex - 1) % self.songList.length;
+        self.loadSong();
+        self.playSong();
       };
 
       this.$('.btn-next').onclick = function () {
-        self.palyNextSong();
+        self.currentIndex = (self.currentIndex + 1) % self.songList.length;
+        self.loadSong();
+        self.playSong();
+      };
+
+      this.audio.ontimeupdate = function () {
+        console.log(parseInt(self.audio.currentTime * 1000));
+        self.locateLyric();
+        self.setProgerssBar();
       };
 
       var swiper = new _swiper.default(this.$('.panels'));
       swiper.on('swipLeft', function () {
         this.classList.remove('panel1');
         this.classList.add('panel2');
+        console.log('left');
       });
       swiper.on('swipRight', function () {
         this.classList.remove('panel2');
         this.classList.add('panel1');
+        console.log('right');
       });
     }
   }, {
-    key: "playPrevSong",
-    value: function playPrevSong() {
+    key: "loadSong",
+    value: function loadSong() {
       var _this3 = this;
 
-      this.currentIndex = (this.songList.length + this.currentIndex - 1) % this.songList.length;
-      this.audio.src = this.songList[this.currentIndex].url;
+      var songObj = this.songList[this.currentIndex];
+      this.$('.header h1').innerText = songObj.title;
+      this.$('.header p').innerText = songObj.author + '-' + songObj.albumn;
+      this.audio.src = songObj.url;
 
-      this.audio.oncanplaythrough = function () {
-        return _this3.audio.play();
+      this.audio.onloadedmetadata = function () {
+        return _this3.$('.time-end').innerText = _this3.formateTime(_this3.audio.duration);
       };
+
+      this.loadLyric();
     }
   }, {
-    key: "palyNextSong",
-    value: function palyNextSong() {
+    key: "playSong",
+    value: function playSong() {
       var _this4 = this;
-
-      this.currentIndex = (this.songList.length + this.currentIndex + 1) % this.songList.length;
-      this.audio.src = this.songList[this.currentIndex].url;
 
       this.audio.oncanplaythrough = function () {
         return _this4.audio.play();
       };
+    }
+  }, {
+    key: "loadLyric",
+    value: function loadLyric() {
+      var _this5 = this;
+
+      fetch(this.songList[this.currentIndex].lyric).then(function (res) {
+        return res.json();
+      }).then(function (data) {
+        console.log(data.lrc.lyric);
+
+        _this5.setLyrics(data.lrc.lyric);
+
+        window.lyrics = data.lrc.lyric;
+      });
+    }
+  }, {
+    key: "locateLyric",
+    value: function locateLyric() {
+      console.log('locateLyric');
+      var currentTime = this.audio.currentTime * 1000;
+      var nextLineTime = this.lyricsArr[this.lyricIndex + 1][0];
+
+      if (currentTime > nextLineTime && this.lyricIndex < this.lyricsArr.length - 1) {
+        this.lyricIndex++;
+        var node = this.$('[data-time="' + this.lyricsArr[this.lyricIndex][0] + '"]');
+        if (node) this.setLyricToCenter(node);
+        this.$$('.panel-effect .lyric p')[0].innerText = this.lyricsArr[this.lyricIndex][1];
+        this.$$('.panel-effect .lyric p')[1].innerText = this.lyricsArr[this.lyricIndex + 1] ? this.lyricsArr[this.lyricIndex + 1][1] : '';
+      }
+    }
+  }, {
+    key: "setLyrics",
+    value: function setLyrics(lyrics) {
+      this.lyricIndex = 0;
+      var fragment = document.createDocumentFragment();
+      var lyricsArr = [];
+      this.lyricsArr = lyricsArr;
+      lyrics.split(/\n/).filter(function (str) {
+        return str.match(/\[.+?\]/);
+      }).forEach(function (line) {
+        var str = line.replace(/\[.+?\]/g, '');
+        line.match(/\[.+?\]/g).forEach(function (t) {
+          t = t.replace(/[\[\]]/g, '');
+          var milliseconds = parseInt(t.slice(0, 2)) * 60 * 1000 + parseInt(t.slice(3, 5)) * 1000 + parseInt(t.slice(6));
+          lyricsArr.push([milliseconds, str]);
+        });
+      });
+      lyricsArr.filter(function (line) {
+        return line[1].trim() !== '';
+      }).sort(function (v1, v2) {
+        if (v1[0] > v2[0]) {
+          return 1;
+        } else {
+          return -1;
+        }
+      }).forEach(function (line) {
+        var node = document.createElement('p');
+        node.setAttribute('data-time', line[0]);
+        node.innerText = line[1];
+        fragment.appendChild(node);
+      });
+      this.$('.panel-lyrics .container').innerHTML = '';
+      this.$('.panel-lyrics .container').appendChild(fragment);
+    }
+  }, {
+    key: "setLyricToCenter",
+    value: function setLyricToCenter(node) {
+      console.log(node);
+      var translateY = node.offsetTop - this.$('.panel-lyrics').offsetHeight / 2;
+      translateY = translateY > 0 ? translateY : 0;
+      this.$('.panel-lyrics .container').style.transform = "translateY(-".concat(translateY, "px)");
+      this.$$('.panel-lyrics p').forEach(function (node) {
+        return node.classList.remove('current');
+      });
+      node.classList.add('current');
+    }
+  }, {
+    key: "setProgerssBar",
+    value: function setProgerssBar() {
+      console.log('set setProgerssBar');
+      var percent = this.audio.currentTime * 100 / this.audio.duration + '%';
+      console.log(percent);
+      this.$('.bar .progress').style.width = percent;
+      this.$('.time-start').innerText = this.formateTime(this.audio.currentTime);
+      console.log(this.$('.bar .progress').style.width);
+    }
+  }, {
+    key: "formateTime",
+    value: function formateTime(secondsTotal) {
+      var minutes = parseInt(secondsTotal / 60);
+      minutes = minutes >= 10 ? '' + minutes : '0' + minutes;
+      var seconds = parseInt(secondsTotal % 60);
+      seconds = seconds >= 10 ? '' + seconds : '0' + seconds;
+      return minutes + ':' + seconds;
     }
   }]);
 
   return Player;
 }();
 
-new Player('#player');
+window.p = new Player('#player');
 },{"./icons.js":"src/javascript/icons.js","./swiper.js":"src/javascript/swiper.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
@@ -407,7 +518,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "59656" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51401" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

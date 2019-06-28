@@ -72,9 +72,9 @@ class Swiper {
       if(clock) clearInterval(clock)
       clock = setTimeout(()=>{
         newX = e.changedTouches[0].pageX
-        if(newX - initX > 50) { // 解决过于灵敏的问题，大于50px才算滑动
+        if(newX - initX > 10) { // 解决过于灵敏的问题，大于50px才算滑动
           eventHub['swipRight'].forEach(fn=>fn.bind(root)())
-        } else if(initX - newX > 50) {
+        } else if(initX - newX > 10) {
           eventHub['swipLeft'].forEach(fn=>fn.bind(root)())
         }  
       }, 100)
