@@ -212,7 +212,7 @@ var Swiper = function Swiper(node) {
     clock = setTimeout(function () {
       newX = e.changedTouches[0].pageX;
 
-      if (newX - initX > 50) {
+      if (newX - initX > 10) {
         // 解决过于灵敏的问题，大于50px才算滑动
         eventHub['swipRight'].forEach(function (fn) {
           return fn.bind(root)();
@@ -518,7 +518,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51401" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58535" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
