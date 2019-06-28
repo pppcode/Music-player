@@ -1,0 +1,1 @@
+{"version":3,"sources":["src/scss/index.scss"],"names":[],"mappings":"AAGA,KACE,WAEA,OACE","file":"scss.dcdf1787.css","sourceRoot":"..","sourcesContent":["$color: black;\n$color2: green;\n\nbody {\n  color: $color;\n\n  p {\n    color: $color2;\n  }\n}"]}
