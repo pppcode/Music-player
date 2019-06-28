@@ -52,7 +52,7 @@ $color3: #0025f1;
 
   .panels {
     width: 200vw;
-    height: calc(100vh - 270px);
+    height: calc(100vh - 270px); // 中间高度自适应
     display: flex;
     
     transition: transform 0.3s;
