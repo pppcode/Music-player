@@ -1,11 +1,12 @@
 import './icons.js'
-
-const $ = selector => document.querySelector(selector)  
-const $$ = selector => document.querySelectorAll(selector)   
+import Swiper from './swiper.js'
+  
 
 class Player {
   constructor(node) {
-    this.root = typeof node === 'string' ? $(node) : node;
+    this.root = typeof node === 'string' ? document.querySelector(node) : node
+    this.$ = selector => this.root.querySelector(selector)
+    this.$$ = selector => this.root.querySelectorAll(selector)
     this.songList = []
     this.currentIndex = 0
     this.audio = new Audio()
@@ -25,7 +26,7 @@ class Player {
 
   bind() {  // 实现播放/暂停等功能
     let self = this
-    this.root.querySelector('.btn-play-pause').onclick = function() {
+    this.$('.btn-play-pause').onclick = function() {
       if(this.classList.contains('playing')) {
         self.audio.pause()
         this.classList.remove('playing')
@@ -39,14 +40,25 @@ class Player {
       }
     }
 
-    this.root.querySelector('.btn-pre').onclick = function() {
+    this.$('.btn-pre').onclick = function() {
       console.log('pre')
       self.playPrevSong()
     }
 
-    this.root.querySelector('.btn-next').onclick = function() {
+    this.$('.btn-next').onclick = function() {
       self.palyNextSong()
     }
+
+    let swiper = new Swiper(this.$('.panels'))
+    swiper.on('swipLeft', function() {
+      this.classList.remove('panel1')
+      this.classList.add('panel2')
+    })
+
+    swiper.on('swipRight', function() {
+      this.classList.remove('panel2')
+      this.classList.add('panel1')
+    })
   }
 
   playPrevSong() {
